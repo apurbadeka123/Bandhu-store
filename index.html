@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Bandhu Store · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0f3b2e;
+      --primary-light: #1e5e4a;
+      --accent: #d4a373;
+      --bg: #faf7f2;
+      --card-bg: #ffffff;
+      --text: #1e1e1e;
+      --text-light: #5e5e5e;
+      --border: #e9e2d8;
+      --shadow: 0 8px 24px rgba(0,0,0,0.05);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --sidebar-w: 240px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    input, textarea, select {
+      font-family: inherit; font-size: 0.95rem; padding: 12px 16px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: white; width: 100%; outline: none; transition: all 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(30,94,74,0.1); }
+    .hidden { display: none !important; }
+
+    /* Layout */
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--primary);
+      color: white;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar .logo {
+      font-weight: 700; font-size: 1.3rem; margin-bottom: 32px; display: flex; align-items: center; gap: 8px;
+    }
+    .sidebar .logo i { color: var(--accent); }
+    .sidebar nav {
+      display: flex; flex-direction: column; gap: 6px; flex: 1;
+    }
+    .sidebar nav a {
+      padding: 12px 16px; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9rem;
+      display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.8); transition: all 0.2s;
+    }
+    .sidebar nav a:hover, .sidebar nav a.active {
+      background: rgba(255,255,255,0.1); color: white;
+    }
+    .sidebar nav a i { width: 20px; text-align: center; }
+
+    .main-content {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    /* Mobile bottom nav for admin */
+    .admin-bottom-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border);
+      justify-content: space-around; padding: 8px 0;
+      z-index: 100; box-shadow: 0 -4px 12px rgba(0,0,0,0.02);
+    }
+    .admin-bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 0.65rem; color: var(--text-light); padding: 4px 8px;
+    }
+    .admin-bottom-nav a i { font-size: 1.2rem; }
+    .admin-bottom-nav a.active { color: var(--primary); }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        width: 260px;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 16px; padding-bottom: 80px; }
+      .admin-bottom-nav { display: flex; }
+      .menu-toggle-admin { display: block !important; }
+    }
+    @media (min-width: 769px) {
+      .menu-toggle-admin { display: none !important; }
+      .admin-bottom-nav { display: none !important; }
+    }
+
+    /* Cards & Stats */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    @media (min-width: 640px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+    .stat-card {
+      background: var(--card-bg); border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .stat-card h3 { font-size: 0.8rem; text-transform: uppercase; color: var(--text-light); letter-spacing: 0.5px; }
+    .stat-card .number { font-size: 2rem; font-weight: 700; color: var(--primary); margin-top: 8px; }
+
+    /* Tables */
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px; }
+    th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { background: #f5f0ea; font-weight: 600; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    tr:hover { background: #fdfaf7; }
+    .table-img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 18px; border-radius: 40px; font-weight: 600; font-size: 0.8rem;
+      transition: all 0.2s; background: var(--primary); color: white; border: none;
+    }
+    .btn:hover { background: var(--primary-light); }
+    .btn-sm { padding: 6px 14px; font-size: 0.75rem; }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: #e8f0ec; }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-accent { background: var(--accent); color: #1e1e1e; }
+    .btn-accent:hover { background: #c4945e; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+      z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--card-bg); border-radius: var(--radius); max-width: 480px; width: 100%;
+      max-height: 90vh; overflow-y: auto; padding: 24px 20px; position: relative;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: scale(0.95); transition: transform 0.2s;
+    }
+    .modal-overlay.show .modal { transform: scale(1); }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      background: #f0f0f0; font-size: 1rem; transition: all 0.2s;
+    }
+    .modal-close:hover { background: #e0e0e0; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--text); color: white; padding: 12px 24px; border-radius: 40px;
+      font-size: 0.85rem; font-weight: 500; z-index: 3000; opacity: 0;
+      transition: all 0.3s; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .status-badge {
+      padding: 4px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 600;
+      text-transform: capitalize; display: inline-block;
+    }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-confirmed { background: #dbeafe; color: #1e40af; }
+    .status-preparing { background: #fce7f3; color: #9d174d; }
+    .status-shipped { background: #e0e7ff; color: #3730a3; }
+    .status-delivered { background: #d1fae5; color: #065f46; }
+    .status-cancelled { background: #fee2e2; color: #991b1b; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; color: var(--text-light); }
+
+    .menu-toggle-admin {
+      display: none; font-size: 1.5rem; color: var(--primary); background: none;
+      padding: 8px; border-radius: 8px; margin-right: 12px;
+    }
+    .header-admin-mobile {
+      display: flex; align-items: center; margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile sidebar toggle -->
+  <div class="header-admin-mobile">
+    <button class="menu-toggle-admin" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+    <h2 style="font-size:1.2rem;">Admin Dashboard</h2>
+  </div>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo"><i class="fas fa-store"></i> Bandhu Store</div>
+      <nav>
+        <a href="#dashboard" class="active" data-route="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="#products" data-route="products"><i class="fas fa-box"></i> Products</a>
+        <a href="#orders" data-route="orders"><i class="fas fa-shopping-cart"></i> Orders</a>
+        <a href="#slider" data-route="slider"><i class="fas fa-images"></i> Slider</a>
+        <a href="#messages" data-route="messages"><i class="fas fa-envelope"></i> Messages</a>
+        <a href="#" id="adminLogout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="adminMain">
+      <!-- Dashboard -->
+      <section id="dashboard" class="admin-section">
+        <h2 style="margin-bottom:20px;">Dashboard</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><h3>Total Products</h3><div class="number" id="statProducts">0</div></div>
+          <div class="stat-card"><h3>Total Orders</h3><div class="number" id="statOrders">0</div></div>
+          <div class="stat-card"><h3>Total Users</h3><div class="number" id="statUsers">0</div></div>
+          <div class="stat-card"><h3>Total Messages</h3><div class="number" id="statMessages">0</div></div>
+        </div>
+      </section>
+
+      <!-- Products -->
+      <section id="products" class="admin-section hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <h2>Products</h2>
+          <button class="btn" id="addProductBtn"><i class="fas fa-plus"></i> Add Product</button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Description</th><th>Actions</th></tr></thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Orders -->
+      <section id="orders" class="admin-section hidden">
+        <h2 style="margin-bottom:16px;">Orders</h2>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Email</th><th>Address</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Slider -->
+      <section id="slider" class="admin-section hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <h2>Slider Images</h2>
+          <button class="btn" id="addSliderBtn"><i class="fas fa-plus"></i> Add Image</button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Preview</th><th>Image URL</th><th>Delete</th></tr></thead>
+            <tbody id="sliderTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Messages -->
+      <section id="messages" class="admin-section hidden">
+        <h2 style="margin-bottom:16px;">Messages</h2>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Message</th></tr></thead>
+            <tbody id="messagesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Admin Bottom Navigation (mobile) -->
+  <nav class="admin-bottom-nav">
+    <a href="#dashboard" data-route="dashboard"><i class="fas fa-chart-pie"></i><span>Dash</span></a>
+    <a href="#products" data-route="products"><i class="fas fa-box"></i><span>Products</span></a>
+    <a href="#orders" data-route="orders"><i class="fas fa-shopping-cart"></i><span>Orders</span></a>
+    <a href="#slider" data-route="slider"><i class="fas fa-images"></i><span>Slider</span></a>
+    <a href="#messages" data-route="messages"><i class="fas fa-envelope"></i><span>Msgs</span></a>
+  </nav>
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal">
+      <button class="modal-close" id="productModalClose"><i class="fas fa-times"></i></button>
+      <h3 id="productModalTitle" style="margin-bottom:16px;">Add Product</h3>
+      <form id="productForm">
+        <input type="hidden" id="productEditId">
+        <div class="form-group"><label>Name</label><input type="text" id="prodName" required></div>
+        <div class="form-group"><label>Category</label><input type="text" id="prodCategory" required></div>
+        <div class="form-group"><label>Price</label><input type="number" id="prodPrice" step="0.01" required></div>
+        <div class="form-group"><label>Description</label><textarea id="prodDesc" rows="3" required></textarea></div>
+        <div class="form-group"><label>Image URL</label><input type="url" id="prodImage" required></div>
+        <button type="submit" class="btn">Save Product</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Slider Modal -->
+  <div class="modal-overlay" id="sliderModal">
+    <div class="modal">
+      <button class="modal-close" id="sliderModalClose"><i class="fas fa-times"></i></button>
+      <h3 style="margin-bottom:16px;">Add Slider Image</h3>
+      <form id="sliderForm">
+        <div class="form-group"><label>Image URL</label><input type="url" id="sliderUrl" required></div>
+        <button type="submit" class="btn">Add Image</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Auth Modal (if not logged in) -->
+  <div class="modal-overlay" id="adminAuthModal">
+    <div class="modal" style="max-width:400px;">
+      <h3 style="margin-bottom:16px;">Admin Login</h3>
+      <form id="adminLoginForm">
+        <div class="form-group"><label>Email</label><input type="email" id="adminEmail" required></div>
+        <div class="form-group"><label>Password</label><input type="password" id="adminPassword" required></div>
+        <button type="submit" class="btn">Login</button>
+        <p id="adminLoginError" style="color:#e74c3c; font-size:0.8rem; margin-top:8px;"></p>
+      </form>
+      <p style="font-size:0.8rem; color:var(--text-light); margin-top:12px; text-align:center;">Any authenticated user can access dashboard.</p>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkK0uQ2JziHmbHsfXDGQhgKiKN2Il5KRI",
+      authDomain: "bandhu-store-a3784.firebaseapp.com",
+      databaseURL: "https://bandhu-store-a3784-default-rtdb.firebaseio.com",
+      projectId: "bandhu-store-a3784",
+      storageBucket: "bandhu-store-a3784.firebasestorage.app",
+      messagingSenderId: "429709526232",
+      appId: "1:429709526232:web:ca4acea10e55ebe061c3ad"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // ==================== DOM ====================
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+    const toast = (msg) => {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => t.classList.remove('show'), 3000);
+    };
+
+    // ==================== AUTH STATE ====================
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        $('#adminAuthModal').classList.remove('show');
+        loadAllData();
+      } else {
+        $('#adminAuthModal').classList.add('show');
+        // Clear tables
+        $('#productsTableBody').innerHTML = '';
+        $('#ordersTableBody').innerHTML = '';
+        $('#sliderTableBody').innerHTML = '';
+        $('#messagesTableBody').innerHTML = '';
+        $('#statProducts').textContent = '0';
+        $('#statOrders').textContent = '0';
+        $('#statUsers').textContent = '0';
+        $('#statMessages').textContent = '0';
+      }
+    });
+
+    // Admin login
+    $('#adminLoginForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const email = $('#adminEmail').value;
+      const password = $('#adminPassword').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        $('#adminLoginError').textContent = err.message;
+      }
+    };
+
+    // Logout
+    $('#adminLogout').onclick = (e) => {
+      e.preventDefault();
+      signOut(auth);
+    };
+
+    // ==================== ROUTING ====================
+    const adminSections = ['dashboard','products','orders','slider','messages'];
+    function adminRouter() {
+      const hash = window.location.hash.slice(1) || 'dashboard';
+      const route = adminSections.includes(hash) ? hash : 'dashboard';
+      $$('.admin-section').forEach(s => s.classList.add('hidden'));
+      $(`#${route}`).classList.remove('hidden');
+      $$('.sidebar nav a, .admin-bottom-nav a').forEach(a => a.classList.remove('active'));
+      document.querySelectorAll(`[data-route="${route}"]`).forEach(a => a.classList.add('active'));
+    }
+    window.addEventListener('hashchange', adminRouter);
+    window.addEventListener('load', adminRouter);
+
+    // Sidebar toggle mobile
+    $('#sidebarToggle').onclick = () => $('#sidebar').classList.toggle('open');
+
+    // ==================== LOAD DATA ====================
+    function loadAllData() {
+      // Products count + table
+      onValue(ref(db, 'products'), (snap) => {
+        const data = snap.val() || {};
+        const list = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+        $('#statProducts').textContent = list.length;
+        const tbody = $('#productsTableBody');
+        tbody.innerHTML = list.map(p => `
+          <tr>
+            <td><img class="table-img" src="${p.imageUrl || ''}" alt=""></td>
+            <td>${p.name || ''}</td>
+            <td>${p.category || ''}</td>
+            <td>$${Number(p.price || 0).toFixed(2)}</td>
+            <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.description || ''}</td>
+            <td>
+              <button class="btn btn-sm btn-outline edit-product" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-sm btn-danger delete-product" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+        // Attach events
+        tbody.querySelectorAll('.edit-product').forEach(b => b.onclick = () => openProductModal(b.dataset.id));
+        tbody.querySelectorAll('.delete-product').forEach(b => b.onclick = () => deleteProduct(b.dataset.id));
+      });
+
+      // Orders
+      onValue(ref(db, 'orders'), (snap) => {
+        const data = snap.val() || {};
+        let allOrders = [];
+        for (const [userId, orders] of Object.entries(data)) {
+          for (const [orderId, order] of Object.entries(orders)) {
+            allOrders.push({ ...order, orderId, userId });
+          }
+        }
+        allOrders.sort((a,b) => b.date - a.date);
+        $('#statOrders').textContent = allOrders.length;
+        const tbody = $('#ordersTableBody');
+        tbody.innerHTML = allOrders.map(o => `
+          <tr>
+            <td>${o.orderId?.slice(-6) || ''}</td>
+            <td>${o.username || ''}</td>
+            <td>${o.phoneNumber || ''}</td>
+            <td>${o.userEmail || ''}</td>
+            <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${o.shippingAddress || ''}</td>
+            <td>${new Date(o.date).toLocaleDateString()}</td>
+            <td>$${Number(o.totalAmount || 0).toFixed(2)}</td>
+            <td>
+              <select class="status-select" data-user="${o.userId}" data-order="${o.orderId}">
+                ${['Pending','Confirmed','Preparing','Shipped','Delivered','Cancelled'].map(s =>
+                  `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`
+                ).join('')}
+              </select>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-danger delete-order" data-user="${o.userId}" data-order="${o.orderId}"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+        // Status change
+        tbody.querySelectorAll('.status-select').forEach(sel => {
+          sel.onchange = async () => {
+            await update(ref(db, `orders/${sel.dataset.user}/${sel.dataset.order}`), { status: sel.value });
+            toast('Status updated');
+          };
+        });
+        // Delete order
+        tbody.querySelectorAll('.delete-order').forEach(b => {
+          b.onclick = async () => {
+            if (confirm('Delete this order permanently?')) {
+              await remove(ref(db, `orders/${b.dataset.user}/${b.dataset.order}`));
+              toast('Order deleted');
+            }
+          };
+        });
+      });
+
+      // Users count
+      onValue(ref(db, 'users'), (snap) => {
+        const data = snap.val() || {};
+        $('#statUsers').textContent = Object.keys(data).length;
+      });
+
+      // Messages
+      onValue(ref(db, 'messages'), (snap) => {
+        const data = snap.val() || {};
+        const list = Object.values(data).sort((a,b) => b.date - a.date);
+        $('#statMessages').textContent = list.length;
+        const tbody = $('#messagesTableBody');
+        tbody.innerHTML = list.map(m => `
+          <tr>
+            <td>${new Date(m.date).toLocaleDateString()}</td>
+            <td>${m.name || ''}</td>
+            <td>${m.email || ''}</td>
+            <td>${m.message || ''}</td>
+          </tr>
+        `).join('');
+      });
+
+      // Slider
+      onValue(ref(db, 'sliderImages'), (snap) => {
+        const data = snap.val() || {};
+        const list = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+        const tbody = $('#sliderTableBody');
+        tbody.innerHTML = list.map(s => `
+          <tr>
+            <td><img class="table-img" src="${s.downloadURL || ''}" alt=""></td>
+            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.downloadURL || ''}</td>
+            <td><button class="btn btn-sm btn-danger delete-slider" data-id="${s.id}"><i class="fas fa-trash"></i></button></td>
+          </tr>
+        `).join('');
+        tbody.querySelectorAll('.delete-slider').forEach(b => {
+          b.onclick = async () => {
+            if (confirm('Delete this slider image?')) {
+              await remove(ref(db, `sliderImages/${b.dataset.id}`));
+              toast('Image deleted');
+            }
+          };
+        });
+      });
+    }
+
+    // ==================== PRODUCT CRUD ====================
+    const productModal = $('#productModal');
+    $('#addProductBtn').onclick = () => {
+      $('#productModalTitle').textContent = 'Add Product';
+      $('#productEditId').value = '';
+      $('#productForm').reset();
+      productModal.classList.add('show');
+    };
+    $('#productModalClose').onclick = () => productModal.classList.remove('show');
+    productModal.addEventListener('click', (e) => { if (e.target === productModal) productModal.classList.remove('show'); });
+
+    async function openProductModal(id) {
+      const snap = await get(ref(db, `products/${id}`));
+      if (!snap.exists()) return;
+      const p = snap.val();
+      $('#productModalTitle').textContent = 'Edit Product';
+      $('#productEditId').value = id;
+      $('#prodName').value = p.name || '';
+      $('#prodCategory').value = p.category || '';
+      $('#prodPrice').value = p.price || '';
+      $('#prodDesc').value = p.description || '';
+      $('#prodImage').value = p.imageUrl || '';
+      productModal.classList.add('show');
+    }
+
+    $('#productForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const id = $('#productEditId').value;
+      const data = {
+        name: $('#prodName').value,
+        category: $('#prodCategory').value,
+        price: parseFloat($('#prodPrice').value),
+        description: $('#prodDesc').value,
+        imageUrl: $('#prodImage').value
+      };
+      if (id) {
+        await update(ref(db, `products/${id}`), data);
+        toast('Product updated');
+      } else {
+        await push(ref(db, 'products'), data);
+        toast('Product added');
+      }
+      productModal.classList.remove('show');
+    };
+
+    async function deleteProduct(id) {
+      if (confirm('Delete this product?')) {
+        await remove(ref(db, `products/${id}`));
+        toast('Product deleted');
+      }
+    }
+
+    // ==================== SLIDER CRUD ====================
+    const sliderModal = $('#sliderModal');
+    $('#addSliderBtn').onclick = () => { sliderModal.classList.add('show'); $('#sliderForm').reset(); };
+    $('#sliderModalClose').onclick = () => sliderModal.classList.remove('show');
+    sliderModal.addEventListener('click', (e) => { if (e.target === sliderModal) sliderModal.classList.remove('show'); });
+
+    $('#sliderForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const url = $('#sliderUrl').value;
+      await push(ref(db, 'sliderImages'), { downloadURL: url });
+      sliderModal.classList.remove('show');
+      toast('Slider image added');
+    };
+  </script>
+</body>
+</html>
